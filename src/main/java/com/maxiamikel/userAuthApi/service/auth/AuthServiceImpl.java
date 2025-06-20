@@ -1,9 +1,14 @@
 package com.maxiamikel.userAuthApi.service.auth;
 
+import java.time.Instant;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
 import com.maxiamikel.userAuthApi.dto.AccessTokenDto;
@@ -30,6 +35,9 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private JwtEncoder jwtEncoder;
+
     @Override
     public User register(UserRequestDto request) {
 
@@ -53,7 +61,41 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AccessTokenDto login(LoginRequestDto credentials) {
-        return null;
+
+        User user = userRepository.findByUsername(credentials.getUsername()).orElseThrow(
+                () -> new EntityNotFoundException("Username or password incorrect!"));
+
+        if (!chechIsPasswordMatches(credentials.getPassword(), user.getPassword())) {
+            throw new EntityNotFoundException("Username or password incorrect!");
+        }
+
+        var now = Instant.now();
+        var expiration = 120L;
+
+        var scopes = user.getRoles().stream().map(Role::getName).collect(Collectors.joining(" "));
+
+        var claims = JwtClaimsSet
+                .builder()
+                .issuer("Auth-API")
+                .subject(String.valueOf(user.getId()))
+                .issuedAt(now)
+                .expiresAt(now.plusSeconds(expiration))
+                .claim("username", user.getUsername())
+                .claim("scope", scopes)
+                .build();
+
+        var tokenJwt = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+        var accessTokenDto = AccessTokenDto
+                .builder()
+                .expiration(expiration)
+                .accessToken(tokenJwt)
+                .build();
+
+        return accessTokenDto;
+    }
+
+    private boolean chechIsPasswordMatches(String rawPassword, String userPassword) {
+        return passwordEncoder.matches(rawPassword, userPassword);
     }
 
     private void assignDefaultRoleToUser(User user) {

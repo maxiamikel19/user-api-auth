@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.maxiamikel.userAuthApi.dto.LoginRequestDto;
 import com.maxiamikel.userAuthApi.dto.UserRequestDto;
 import com.maxiamikel.userAuthApi.service.auth.AuthService;
 
@@ -24,5 +25,11 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody @Valid UserRequestDto request) {
         var user = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody @Valid LoginRequestDto credentials) {
+        var token = authService.login(credentials);
+        return ResponseEntity.status(HttpStatus.CREATED).body(token);
     }
 }
