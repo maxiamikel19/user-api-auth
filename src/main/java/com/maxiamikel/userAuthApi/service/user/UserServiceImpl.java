@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.maxiamikel.userAuthApi.dto.PasswordResetRequestDto;
 import com.maxiamikel.userAuthApi.dto.RoleChangeRequestDto;
@@ -41,6 +42,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUserRegister(Long id, String authenticatedUser) {
         User userToDelete = findById(id);
         User loggedUser = getAuthenticatedUser(authenticatedUser);
@@ -52,10 +54,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void updateUserPassword(Long id, PasswordResetRequestDto requestDto, String authenticatedUser) {
-        User user = getAuthenticatedUser(authenticatedUser);
 
-        if (!verifyPasswordMatches(requestDto.getOldPassword(), user.getPassword())) {
+        User opUser = findById(id);
+
+        User loggedUser = getAuthenticatedUser(authenticatedUser);
+
+        if (!verifyPasswordMatches(requestDto.getOldPassword(), loggedUser.getPassword())) {
+            throw new UnauthorizedException("Invalid user credentials");
+        }
+
+        if (!verifyPasswordMatches(requestDto.getOldPassword(), opUser.getPassword())) {
             throw new UnauthorizedException("Invalid user credentials");
         }
 
@@ -63,12 +73,13 @@ public class UserServiceImpl implements UserService {
             throw new UnauthorizedException("Password confirmation not matches");
         }
 
-        user.setPassword(passwordEncoder.encode(requestDto.getNewPassword()));
-        userRepository.save(user);
+        opUser.setPassword(passwordEncoder.encode(requestDto.getNewPassword()));
+        userRepository.save(opUser);
 
     }
 
     @Override
+    @Transactional
     public void changeUserRole(Long id, RoleChangeRequestDto requestDto, String authenticatedUser) {
 
         User loggedUser = getAuthenticatedUser(authenticatedUser);

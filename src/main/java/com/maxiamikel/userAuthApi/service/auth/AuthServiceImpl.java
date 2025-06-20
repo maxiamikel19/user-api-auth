@@ -70,7 +70,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         var now = Instant.now();
-        var expiration = 120L;
+        var expiration = 600L;
 
         var scopes = user.getRoles().stream().map(Role::getName).collect(Collectors.joining(" "));
 
@@ -106,8 +106,10 @@ public class AuthServiceImpl implements AuthService {
             Role admin = roleRepository.findByName("ADMIN")
                     .orElseThrow(() -> new EntityNotFoundException("Role ADMIN not found"));
             user.setRoles(Set.of(admin, guest));
+        } else {
+            user.setRoles(Set.of(guest));
         }
-        user.setRoles(Set.of(guest));
+
     }
 
 }
