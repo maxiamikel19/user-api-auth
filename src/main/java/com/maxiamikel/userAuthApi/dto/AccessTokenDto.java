@@ -7,5 +7,5 @@ import lombok.Data;
 @Builder
 public class AccessTokenDto {
     private String accessToken;
-    private Long expiration;
+    private String expireAt;
 }

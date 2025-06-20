@@ -18,6 +18,7 @@ import com.maxiamikel.userAuthApi.entity.Role;
 import com.maxiamikel.userAuthApi.entity.User;
 import com.maxiamikel.userAuthApi.repository.RoleRepository;
 import com.maxiamikel.userAuthApi.repository.UserRepository;
+import com.maxiamikel.userAuthApi.utils.InstantConverter;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -70,7 +71,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         var now = Instant.now();
-        var expiration = 600L;
+        var expiration = 60L;
+        var expirationDateTime = InstantConverter.convertToString(expiration);
 
         var scopes = user.getRoles().stream().map(Role::getName).collect(Collectors.joining(" "));
 
@@ -87,7 +89,7 @@ public class AuthServiceImpl implements AuthService {
         var tokenJwt = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
         var accessTokenDto = AccessTokenDto
                 .builder()
-                .expiration(expiration)
+                .expireAt(expirationDateTime)
                 .accessToken(tokenJwt)
                 .build();
 
