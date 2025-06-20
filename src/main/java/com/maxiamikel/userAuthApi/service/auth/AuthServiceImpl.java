@@ -15,8 +15,10 @@ import com.maxiamikel.userAuthApi.repository.RoleRepository;
 import com.maxiamikel.userAuthApi.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
     @Autowired
@@ -32,16 +34,21 @@ public class AuthServiceImpl implements AuthService {
     public User register(UserRequestDto request) {
 
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            log.warn("Username already esists in the users table : {}", request.getUsername());
             throw new RuntimeException("Username already taken");
         }
 
         User user = new User();
+
         user.setId(null);
         user.setPassword(passwordEncoder.encode(request.getPassword().trim()));
         user.setUsername(request.getUsername().trim());
         assignDefaultRoleToUser(user);
 
-        return userRepository.save(user);
+        var newUser = userRepository.save(user);
+        log.info("New user: {} successfully created", newUser.getUsername());
+
+        return newUser;
     }
 
     @Override
