@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.maxiamikel.userAuthApi.dto.LoginRequestDto;
 import com.maxiamikel.userAuthApi.dto.UserRequestDto;
+import com.maxiamikel.userAuthApi.mapper.UserMapper;
 import com.maxiamikel.userAuthApi.service.auth.AuthService;
 
 import jakarta.validation.Valid;
@@ -24,7 +25,8 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid UserRequestDto request) {
         var user = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        var userDto = UserMapper.mapToDto(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
     }
 
     @PostMapping("/login")

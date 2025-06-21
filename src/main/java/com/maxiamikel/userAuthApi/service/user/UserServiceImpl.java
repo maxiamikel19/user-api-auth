@@ -111,7 +111,7 @@ public class UserServiceImpl implements UserService {
         return authUser;
     }
 
-    private boolean verifyPasswordMatches(String rawPassword, String userPassword) {
+    public boolean verifyPasswordMatches(String rawPassword, String userPassword) {
         return passwordEncoder.matches(rawPassword, userPassword);
     }
 
