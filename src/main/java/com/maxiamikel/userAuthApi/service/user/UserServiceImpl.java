@@ -14,6 +14,7 @@ import com.maxiamikel.userAuthApi.dto.PasswordResetRequestDto;
 import com.maxiamikel.userAuthApi.dto.RoleChangeRequestDto;
 import com.maxiamikel.userAuthApi.entity.Role;
 import com.maxiamikel.userAuthApi.entity.User;
+import com.maxiamikel.userAuthApi.exception.BadRequestException;
 import com.maxiamikel.userAuthApi.exception.ResourceNotFoundException;
 import com.maxiamikel.userAuthApi.exception.UnauthorizedException;
 import com.maxiamikel.userAuthApi.repository.RoleRepository;
@@ -65,12 +66,12 @@ public class UserServiceImpl implements UserService {
             throw new UnauthorizedException("Invalid user credentials");
         }
 
-        if (!verifyPasswordMatches(requestDto.getOldPassword(), opUser.getPassword())) {
+        if (!opUser.getUsername().equals(loggedUser.getUsername())) {
             throw new UnauthorizedException("Invalid user credentials");
         }
 
         if (!requestDto.getNewPassword().equals(requestDto.getConfirmationPassword())) {
-            throw new UnauthorizedException("Password confirmation not matches");
+            throw new BadRequestException("Password confirmation not matches");
         }
 
         opUser.setPassword(passwordEncoder.encode(requestDto.getNewPassword()));

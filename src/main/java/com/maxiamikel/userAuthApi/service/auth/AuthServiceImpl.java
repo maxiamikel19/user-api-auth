@@ -16,11 +16,13 @@ import com.maxiamikel.userAuthApi.dto.LoginRequestDto;
 import com.maxiamikel.userAuthApi.dto.UserRequestDto;
 import com.maxiamikel.userAuthApi.entity.Role;
 import com.maxiamikel.userAuthApi.entity.User;
+import com.maxiamikel.userAuthApi.exception.ResourceAlreadyExistException;
+import com.maxiamikel.userAuthApi.exception.ResourceNotFoundException;
+import com.maxiamikel.userAuthApi.exception.UnauthorizedException;
 import com.maxiamikel.userAuthApi.repository.RoleRepository;
 import com.maxiamikel.userAuthApi.repository.UserRepository;
 import com.maxiamikel.userAuthApi.utils.InstantConverter;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -44,7 +46,7 @@ public class AuthServiceImpl implements AuthService {
 
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
             log.warn("Username already esists in the users table : {}", request.getUsername());
-            throw new RuntimeException("Username already taken");
+            throw new ResourceAlreadyExistException("Username already taken");
         }
 
         User user = new User();
@@ -64,14 +66,14 @@ public class AuthServiceImpl implements AuthService {
     public AccessTokenDto login(LoginRequestDto credentials) {
 
         User user = userRepository.findByUsername(credentials.getUsername()).orElseThrow(
-                () -> new EntityNotFoundException("Username or password incorrect!"));
+                () -> new UnauthorizedException("Username or password incorrect!"));
 
         if (!chechIsPasswordMatches(credentials.getPassword(), user.getPassword())) {
-            throw new EntityNotFoundException("Username or password incorrect!");
+            throw new UnauthorizedException("Username or password incorrect!");
         }
 
         var now = Instant.now();
-        var expiration = 60L;
+        var expiration = 600L;
         var expirationDateTime = InstantConverter.convertToString(expiration);
 
         var scopes = user.getRoles().stream().map(Role::getName).collect(Collectors.joining(" "));
@@ -102,11 +104,11 @@ public class AuthServiceImpl implements AuthService {
 
     private void assignDefaultRoleToUser(User user) {
         Role guest = roleRepository.findByName("GUEST")
-                .orElseThrow(() -> new EntityNotFoundException("Role GUEST not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Role GUEST not found"));
 
         if (userRepository.count() == 0) {
             Role admin = roleRepository.findByName("ADMIN")
-                    .orElseThrow(() -> new EntityNotFoundException("Role ADMIN not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Role ADMIN not found"));
             user.setRoles(Set.of(admin, guest));
         } else {
             user.setRoles(Set.of(guest));
